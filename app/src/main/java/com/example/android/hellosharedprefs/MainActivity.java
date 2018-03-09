@@ -15,6 +15,7 @@
  */
 package com.example.android.hellosharedprefs;
 
+import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -44,27 +45,28 @@ public class MainActivity extends AppCompatActivity {
     // Key for current color
     private final String COLOR_KEY = "color";
 
+    // Shared Prefs
+    private SharedPreferences mPreferences;
+    private String sharedPrefFile = "com.example.android.hellosharedprefs";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize views, color
+        // Initialize views, color, shared preferences
         mShowCountTextView = (TextView) findViewById(R.id.count_textview);
         mColor = ContextCompat.getColor(this, R.color.default_background);
+        mPreferences = getSharedPreferences(sharedPrefFile, MODE_PRIVATE);
 
-        // Restore the saved state. See onSaveInstanceState() for what gets saved.
-        if (savedInstanceState != null) {
+        // Set any preferences saved in onPause, otherwise using default values
+        mCount = mPreferences.getInt(COUNT_KEY, 0);
+        mColor = mPreferences.getInt(COLOR_KEY, mColor);
 
-            mCount = savedInstanceState.getInt(COUNT_KEY);
-            if (mCount != 0) {
-                mShowCountTextView.setText(String.format("%s", mCount));
-            }
-
-            mColor = savedInstanceState.getInt(COLOR_KEY);
-            mShowCountTextView.setBackgroundColor(mColor);
-        }
+        // Update count, background color
+        mShowCountTextView.setText(String.format("%s", mCount));
+        mShowCountTextView.setBackgroundColor(mColor);
     }
 
     /**
@@ -91,20 +93,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Saves the instance state if the activity is restarted (for example, on device rotation.)
-     * Here you save the values for the count and the background color.
-     *
-     * @param outState The state data.
-     */
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        outState.putInt(COUNT_KEY, mCount);
-        outState.putInt(COLOR_KEY, mColor);
-    }
-
-    /**
      * Handles the onClick for the Reset button.  Resets the global count and background
      * variables to the defaults, resets the views to those values, and clears the shared
      * preferences
@@ -119,5 +107,22 @@ public class MainActivity extends AppCompatActivity {
         // Reset color
         mColor = ContextCompat.getColor(this, R.color.default_background);
         mShowCountTextView.setBackgroundColor(mColor);
+
+        // Reset saved preferences
+        SharedPreferences.Editor editor = mPreferences.edit();
+        editor.clear();
+        editor.apply();
+    }
+
+    /**
+     * Saves preferences
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        SharedPreferences.Editor editor = mPreferences.edit();
+        editor.putInt(COUNT_KEY, mCount);
+        editor.putInt(COLOR_KEY, mColor);
+        editor.apply();
     }
 }
